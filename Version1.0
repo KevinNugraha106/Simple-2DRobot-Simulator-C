@@ -1,0 +1,426 @@
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <stdlib.h>
+#include <windows.h>
+
+
+struct Robot //fungsi ini untuk mendeklarasikan struct robot (fungsi dari robot itu sendiri) yang nanti bisa di linkedlist
+{
+    int x;   //koordinat x
+    int y;   //koordinat y
+    int Cargo; //fungsi ketika membawa objek
+    struct Robot* Next; //deklarasi link untuk list selanjutnya
+};
+
+struct Robot* Rb1 = NULL; //deklarasi untuk inisiasi head linkedlist (robot pertama)
+
+int wsizex;             //Dimensi Warehouse X (besar posisi x)
+int wsizey;             //Dimensi Warehouse Y (besar posisi y)
+
+int RoboCount;          //Deklarasi untuk counter robot supaya bisa dicontrol robot pilihan
+int RbtCtrl = 1;        //nama robot yang pertama
+int ObjtX,ObjtY;        //deklarasi koordinat object biasa
+
+void clean()
+{
+ while(getchar() != '\n');  //Untuk press any key to continue, agar tidak buffer
+}
+
+void moving(char com[2],int RbtCtrl) //deklarasi untuk gerak robot kenapa 2 itu karena bisa input 2 huruf
+{
+    struct Robot *temp; //deklarasi untuk memori temporary
+    int i = 1; //ini seperti counter saja jika dalam kasus ini berarti satu
+    temp = Rb1; //alokasi memori temp akan sama dengan robot1
+    while (temp->Next!=NULL && i != RbtCtrl) //ini merupakan kondisi dimana memori pada temp akan dilanjutkan ke linkedlist selanjutnya dan syaratnya salahsatunya itu harus sama dengan angka robot nya itu sendiri jika tidak sama maka akan dilanjutnkan kek linkedlist berikutnya
+        temp = temp->Next;
+        i++;
+
+
+    if (strcmp("u",com)==0){          //berikut merupakan comment ketika dimasukan u
+        temp->y -= 1;
+    }else if ((strcmp("d",com)==0)){
+        temp->y += 1;
+    }else if (strcmp("l",com)==0){
+        temp->x -= 1;
+    }else if(strcmp("r",com)==0){
+        temp->x += 1;
+    }else if(strcmp("ul",com)==0){
+        temp->x -= 1,temp->y -= 1;
+    }else if(strcmp("ur",com)==0){
+        temp->x += 1,temp->y -= 1;
+    }else if(strcmp("dl",com)==0){
+        temp->x -= 1,temp->y += 1;
+    }else if(strcmp("dr",com)==0){
+        temp->x += 1,temp->y += 1;
+    }
+}
+
+int pickup(int RbtCtrl)             //ini merupakan deklarasi dari ketika robot mengangkat benda
+{
+    struct Robot *temp;
+    int i = 1;
+    temp = Rb1;
+    while (temp->Next!=NULL && i != RbtCtrl){
+        temp = temp->Next;
+        i++;
+    }
+    if (temp->Cargo != 0){
+        printf("\nMohon maaf, tidak dapat membawa barang lagi!\n");
+        return 10;
+    }else{
+        printf("\nMenganggat barang perlahan! Cargo sudah terisi penuh!\n");
+        temp->Cargo = 1;
+        return 20;
+    }
+}
+
+int put(int RbtCtrl) //ini merupakan deklarasi dari fungsi menaruh obbjek
+{
+    struct Robot *temp;
+    int i = 1;
+    temp = Rb1;
+    while (temp->Next!=NULL && i != RbtCtrl){
+        temp = temp->Next;
+        i++;
+    }
+    if (temp->Cargo != 1){
+        printf("\nTidak ada muatan yang sedang diangkut!\n");
+        return 10;
+    }else{
+        printf("\nMenaruh barang perlahan! Cargo sudah kosong!\n");
+        temp->Cargo = 0;
+        return 20;
+    }
+}
+
+int ScanTargetX(char com[2],int RbtCtrl) //ini merupakan deklarasi untuk menscan koordinat di sekitar robot tersebut untuk x
+{
+    struct Robot *temp;
+    int i = 1;
+    temp = Rb1;
+    while (temp->Next!=NULL && i != RbtCtrl){
+        temp = temp->Next;
+        i++;
+    }
+
+    if (strcmp("l",com)==0){
+        return temp->x - 1;
+    }else if(strcmp("r",com)==0){
+        return temp->x + 1;
+    }else if(strcmp("ul",com)==0){
+        return temp->x - 1;
+    }else if(strcmp("ur",com)==0){
+        return temp->x + 1;
+    }else if(strcmp("dl",com)==0){
+        return temp->x - 1;
+    }else if(strcmp("dr",com)==0){
+        return temp->x + 1;
+    }else {
+        return temp->x;
+    }
+}
+
+int ScanTargetY(char com[2],int RbtCtrl) //ini merupakan deklarasi untuk menscan koordinat di sekitar robot terseubt untuk y
+{
+    struct Robot *temp;
+    int i = 1;
+    temp = Rb1;
+    while (temp->Next!=NULL && i != RbtCtrl){
+        temp = temp->Next;
+        i++;
+
+    }if (strcmp("u",com)==0){
+        return temp->y - 1;
+    }else if(strcmp("d",com)==0){
+        return temp->y + 1;
+    }else if(strcmp("ul",com)==0){
+        return temp->y - 1;
+    }else if(strcmp("ur",com)==0){
+        return temp->y - 1;
+    }else if(strcmp("dl",com)==0){
+        return temp->y + 1;
+    }else if(strcmp("dr",com)==0){
+        return temp->y + 1;
+    }else {
+        return temp->y;
+    }
+}
+
+int main()
+{
+    char command[2];    //Variable untuk command arah, untuk fungsi moving,pick,put,scan.
+
+    //Inisiasi, dimana ukuran Warehouse ditentukan, koordinat awal object2 dan robot juga di tentukan
+    //errorcheck berguna untuk mencegah user memasukkan angka yang salah.
+
+    printf("Selamat datang di ROBOCOP GAME --- KVN SFT -- v3.0\n");
+    printf("Game ini adalah game simulasi sederhana robot, dimana jumlah robot dan object dapat disesuaikan kebutuhan masing-masing");
+
+    //Input Dimensi Warehouse
+    printf("\n\nSilahkan masukkan size Warehouse (X,Y):\nKoordinat X : ");
+    scanf("%d",&wsizex);
+    printf("\nKoordinat Y : ");
+    scanf("%d",&wsizey);
+    int Wh[wsizey][wsizex];                //ini untuk memasukan fungsi array (du adimensi)
+    for (int i = 1;i<= wsizey;i++){        //untuk koordinat y dibentuk kolomnya itu sejumlha yang diminta user
+        for (int j = 1;j<= wsizex;j++){    //untuk koordinat x dibentuk kolomnya itu sejumlah yang diminta user
+            Wh[i][j] = 0;                  //koordinat kosong
+        }
+    }
+    //Input Koordinat awal Robot
+    Rb1 = (struct Robot*)malloc(sizeof(struct Robot)); //meminta memori untuk mengalokasikan memori pada linkedlist nya itu sendiri
+    Rb1->Next = NULL;                                  //disini NULL karena linkedlist selanjutnya belom diketahui apa alokasinya
+    printf("\n\nSilahkan masukkan posisi robot (X,Y):\nKoordinat X : ");
+    scanf("%d",&Rb1->x);                                //ini untuk memasukan koordinat x ke fungsi koordinat x tadi
+    printf("\nKoordinat Y : ");
+    scanf("%d",&Rb1->y);                                //memasukan koordinat y ke fungsi koordinat y tadi
+    RoboCount = 1;                                      //ini untuk mengcounter robotnya itu sendiri dimana pada awalnya nama robotnya itu robot1
+    Rb1->Cargo = 0;                                     //ini untuk memberitahukan kepada program bahwa awalnya tidak ada muatan
+
+    //Input koordinat awal object pertama
+    printf("\n\nSilahkan masukkan posisi object-1 (X,Y):\nKoordinat X : ");
+    scanf("%d",&ObjtX);                                 //ini untuk memasukan koordinat x objek ke fungsi objek
+    printf("\nKoordinat Y : ");
+    scanf("%d",&ObjtY);                                 //ini untuk memasukan koordinat y objek ke fungsi objek
+    Wh[ObjtY][ObjtX] = 88;                              //ini merupkaan tanda dimana terdapat objek dalam petanya
+
+    system("cls");      //Membersihkan layar jika inisiasi sudah selesai
+
+    do                     //ini untuk mengeloop program hingga user selesai bermain
+    {
+    struct Robot* tempR = Rb1; //ini merupakan deklarasi dari struct robot awal nya
+    RoboCount = 1;              //inimerupakan counter robot yang sedang digunakan
+    while (tempR != NULL){
+        Wh[tempR->y][tempR->x] = 10 + RoboCount;
+        RoboCount++;
+        tempR = tempR->Next;
+    }
+
+    //Menampilkan denah warehouse beserta user-interface guide.
+    for (int i = 1;i<= wsizey;i++){
+        for (int j = 1;j<= wsizex;j++){
+            if (Wh[i][j]==0){    //ini untuk menampilkan kalau tidak ada objek
+                printf(" -- ");
+            } else if (Wh[i][j]==88){ //ini untuk menampilkan ada objek
+                printf(" OO ");
+            }
+            else{                       //selain ada objek berarti menampilkan posisi robot
+            printf(" R%d ",(Wh[i][j]-10));
+            }
+        }
+        printf("\n");
+    }
+    printf("\nCurrent Controlled Robot : R%d\n",RbtCtrl);
+    printf("\nBerikut ini adalah perintah-perintah dasar yang dapat dilakukan pada robot ini (kode perintah) : \n\n");
+    printf("      MOVEMENT                ||    KONTROL ROBOT           ||     DEVELOPER MENU  \n");
+    printf("- Gerak ke atas (u)           ||- Scan (sc)                 ||- Refresh Map (m)\n");
+    printf("- Gerak ke bawah (d)          ||- Ambil Object (pi)         ||- Add Robot (AR)\n");
+    printf("- Gerak ke kiri (l)           ||- Taruh objek (pu)          ||- Add Object (AO)\n");
+    printf("- Gerak ke kanan (r)          ||- Ganti Robot(ctrl)         ||- Full Scan Map (scm)\n");
+    printf("- Gerak ke kiri-atas (ul)     ||                            ||- Exit (q)\n");
+    printf("- Gerak ke kanan-atas (ur)    ||                            ||- Help (h)\n");
+    printf("- Gerak ke kiri-bawah (dl)    ||                            ||\n");
+    printf("- Gerak ke kanan-bawah (dr)   ||                            ||\n");
+
+
+    //Meminta input command.
+    printf("\nSilahkan masukkan perintah anda (Kode perintah),\nPerintah anda : ");
+    scanf("%s",command);
+
+    if (strcmp("AR",command)==0){
+            struct Robot *RbNext, *temp;
+            int x, y;
+
+            RbNext = (struct Robot*)malloc(sizeof(struct Robot)); //meminta memori untuk robot baru
+            printf("\nSilahkan masukkan Koordinat X Robot Baru : "); //input data oleh user buat koordinat x robot baru
+            scanf("%d",&x);
+            RbNext->x = x; // untuk nandain robot baru itu x nya yang diinput oleh user
+
+            printf("\nSilahkan masukkan Koordinat Y Robot Baru : ");  //input data oleh user buat koordinat y robbot baru
+            scanf("%d",&y);
+            RbNext->y = y; // untuk nandain robot baru itu y nya yang diinput oleh user
+
+            RbNext->Cargo = 0; //ini tanda bahwa robot baru tidak ada objek
+            RbNext->Next = NULL; //karena kita tidak tahu robot selanjutnya itu ada objeknya atau tidak
+            // Traverse to the last node
+            temp = Rb1;     //ini merupakan memori pada temp akan sama dengan memori pada rb1
+            while (temp->Next != NULL){ //syaratnya
+                temp = temp->Next; //maka memori pada temp akan sama dengan memori selanjutnya
+            }
+            temp->Next = RbNext; // linked list selanjutnya kaan sama dengan robot yang sudah ditambahkan koordinat dll nya
+            printf("\nSukses Menambahkan Robot!! Silahkan tekan ENTER untuk melanjutkan....\n");
+            clean(); //ENTER TO CONTINUE
+            clean();
+            system("cls");
+        }
+    else if (strcmp("AO",command)==0){
+            printf("\nSilahkan masukkan Koordinat X Object Baru : ");
+            scanf("%d",&ObjtX); //ngambil data dari yang diinput oleh user
+            printf("\nSilahkan masukkan Koordinat Y Object Baru : ");
+            scanf("%d",&ObjtY); //ngambil data dari yang diinput oleh user
+            if (Wh[ObjtY][ObjtX]!=0){
+                printf("\nTidak dapat menambahkan objek di area ini, \n(Alasan : terdapat objek lainnya atau merupakan batas Warehouse)\n");
+            }else{
+                Wh[ObjtY][ObjtX]=88;
+                printf("\nSukses Menambahkan Object Baru!! Silahkan tekan ENTER untuk melanjutkan....\n");
+            }
+            clean();
+            clean();
+            system("cls");
+        }
+    else if(strcmp("u",command)==0 || strcmp("d",command)==0 || strcmp("l",command)==0 || strcmp("r",command)==0 || strcmp("ul",command)==0
+                    || strcmp("ur",command)==0 || strcmp("dl",command)==0 || strcmp("dr",command)==0){
+            struct Robot *temp = Rb1;
+            int i = 1;
+            while (temp->Next!=NULL && i != RbtCtrl){
+                temp = temp->Next;
+                i++;
+            }
+            Wh[temp->y][temp->x] = 0;
+            int x = ScanTargetX(command,RbtCtrl); //minta informasi buat koordinat x sekitar robot
+            int y = ScanTargetY(command,RbtCtrl); //minta informasi buat koordinat y sekitar robo
+            if (Wh[y][x]!=0){ //berarti ada objek
+                printf("\nTidak Dapat bergerak di area ini, silahkan pilih arah lain!\ntekan ENTER untuk melanjutkan...");
+            }else{
+                moving(command, RbtCtrl);
+                printf("Sukses bergerak, tekan ENTER untuk melanjutkan....");
+            }
+            clean();
+            clean();
+            system("cls");
+        }
+    else if(strcmp("sc",command)==0){ //untuk scan map yanng ada di peta
+            char dir[2];
+            printf("Masukkan arah scan : ");
+            scanf("%s",dir);
+            int xscan = ScanTargetX(dir,RbtCtrl);
+            int yscan = ScanTargetY(dir,RbtCtrl);
+            if (Wh[yscan][xscan]==0){
+                printf("\nHASIL SCAN : \nTidak ada apa-apa di arah ini!..\n");
+            }else if (yscan+1>wsizey || yscan-1<0 || xscan-1<0 || xscan+1>wsizex){
+                printf("\nHASIL SCAN : \nIni adalah batas Warehouse..\n");
+            }else if (Wh[yscan][xscan]==88){
+                printf("\nHASIL SCAN : \nAda Object di arah ini..\n");
+            }else {
+                printf("\nHASIL SCAN : \nAda Robot Lain di arah ini..\n");
+            }
+            printf("\nTekan ENTER untuk melanjutkan ...");
+            clean();
+            clean();
+            system("cls");
+    }
+    else if(strcmp("ctrl",command)==0) //deklarasi fungsi untuk mengganti robot yang ingin dikendalikan
+        {
+        if (RoboCount<=2){
+            printf("\n\nMohon Maaf! Anda hanya punya 1 robot yang dapat dikendalikan\nTekan ENTER untuk melanjutkan...");
+            clean();
+            clean();
+            system("cls");
+        }
+        else{
+        printf("\nSilahkan pilih angka robot yang ingin di kontrol ( Misal 1, 2, 3, ....) : ");
+        scanf("%d",&RbtCtrl);
+        printf("\nRobot R%d sukses diambil alih komando, tekan ENTER untuk melanjutkan...\n",RbtCtrl);
+        clean();
+        clean();
+        system("cls");
+        }
+    }
+    else if(strcmp("pi",command)==0){ //deklarasi untuk pick
+        char dir[2];
+        printf("Mau ambil diarah mana? Masukkan arah pengambilan : ");
+        scanf("%s",dir);
+        int x = ScanTargetX(dir,RbtCtrl);
+        int y = ScanTargetY(dir,RbtCtrl);
+        if (Wh[y][x]!=88){
+            printf("\nTidak ada objek di daerah ini, silahkan pilih arah lain!\n");
+        }else{
+            int Res = pickup(RbtCtrl);
+            if (Res == 20){ //ngasih status buat berhasil keambil
+                Wh[y][x]=0; //koordinat sebelumnya berarti sudah 0
+            }
+        }printf("\n\nTekan ENTER untuk melanjutkan....");
+        clean();
+        clean();
+        system("cls");
+    }
+    else if(strcmp("pu",command)==0){ //sama dengan pick
+        char dir[2];
+        printf("Mau taroh diarah mana? Masukkan arah peletakan : ");
+        scanf("%s",dir);
+        int x = ScanTargetX(dir,RbtCtrl);
+        int y = ScanTargetY(dir,RbtCtrl);
+        if (Wh[y][x]!=0){
+            printf("\nObjek tidak dapat ditaroh di arah lain, silahkan pilih arah lain!\n");
+        }else{
+            int Res = put(RbtCtrl);
+            if (Res == 20){
+                Wh[y][x]=88;
+            }
+        }printf("\n\nTekan ENTER untuk melanjutkan....");
+        clean();
+        clean();
+        system("cls");
+    }
+    else if(strcmp("scm",command)==0){
+        printf("\nHASIL FULL SCAN : \n");
+        for (int i = 1;i<= wsizey;i++){
+            for (int j = 1;j<= wsizex;j++){
+                if (Wh[i][j]!=0 && Wh[i][j]!=88){
+                    int a = Wh[i][j] - 10;
+                    printf("-Pada koordinat %d,%d, terdapat robot R%d",j,i,a);
+                } else if (Wh[i][j]==88){
+                    printf("-Pada koordinat %d,%d, terdapat Objek",j,i);
+                }
+            }
+        printf("\n");
+        }
+        printf("\n\nTekan ENTER untuk melanjutkan....");
+        clean();
+        clean();
+        system("cls");
+    }
+    else if(strcmp("h",command)==0){
+
+        printf("\n\nPada kolom MOVEMENT berfungsi untuk menggerakan robot yang sedang dimainkan oleh user yaitu :\n\n");
+        printf("-> Jika user memasukan perintah "u" maka robot akan bergerak ke atas\n");
+        printf("-> Jika user memasukan perintah 'd' maka robot akan bergerak ke bawah\n");
+        printf("-> Jika user memasukan perintah 'l' maka robot akan bergerak ke kiri\n");
+        printf("-> Jika user memasukan perintah 'r' maka robot akan bergerak ke kanan\n");
+        printf("-> Jika user memasukan perintah 'ul' maka robot akan bergerak ke serong kiri\n");
+        printf("-> Jika user memasukan perintah 'ur' maka robot akan bergerak ke serong kanan\n");
+        printf("-> Jika user memasukan perintah 'dl' maka robot akan bergerak ke serong kiri bawah\n");
+        printf("-> Jika user memasukan perintah 'dr' maka robot akan bergerak ke serong kanan bawah\n");
+
+        printf("\nPada kolom KONTROL ROBOT berfungsi untuk memberikan kontrol pada robot yang sedang dimainkan oleh user yaitu :\n\n");
+        printf("-> Jika user memasukan perintah 'sc' maka program akan men - scan apa yang terdapat disekitar robot\n");
+        printf("-> Jika user memasukan perintah 'pi' maka robot akan mengambil objek yang ada disekitar objek\n");
+        printf("-> Jika user memasukan perintah 'pu' maka robot akan menaruh objek yang sedang dibawa oleh robot tersebut\n");
+        printf("-> Jika user memasukan perintah 'ctrl' maka user robot yang dikendalikan user akan berganti sesuai dengan keinginan user\n");
+
+        printf("\nPada kolom DEVELOPER MENU berfungsi untuk menambah maupun memberikan akses kepada user untuk:\n\n");
+        printf("-> Jika user memasukan perintah 'm' maka map yang terdapat dalam program tersebut akan ter - refresh\n");
+        printf("-> Jika user memasukan perintah 'AR' maka user dapat menambah jumlah robot baru pada permainan tersebut\n");
+        printf("-> Jika user memasukan perintah 'AO' maka user dapat menambah jumlah objek baru pada permainan tersebut\n");
+        printf("-> Jika user memasukan perintah 'scm' maka terdapat notifikasi berupa letak dari objek dan robot yang sedang dimainkan\n");
+        printf("-> Jika user memasukan perintah 'q' maka user dapat mengakhiri permainan ini\n");
+
+        printf("\n\nTekan ENTER untuk melanjutkan....");
+        clean();
+        clean();
+        system("cls");
+    }
+    else if(strcmp("q",command)==0 || strcmp("m",command)==0){
+        system("cls");
+    }
+    else {
+        printf("Mohon maaf, perintah anda tidak dapat dikenali, silahkan coba lagi!!\n\nPress ENTER to Continue....\n");
+        clean();
+        clean();
+        system("cls");
+    }
+    }while(strcmp("q",command)!=0);     //Jika input command yang dimasukkan selain 'q' makan program akan terus meminta perintah
+    printf("\n\nProgram Selesai, terima kasih, Have a Nice day...!!\n\n");
+    return 0;
+}
